@@ -6,20 +6,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 int m_socket_id = -1;
+
 FILE *DataFServer;
+time_t rawtime;
+struct tm * timeinfo;
+char randstr[25];
+
+char* Cards[7];
 
 /* 处理server的消息 */
 int on_server_message(int length, const char* buffer)
 {
     char reg_msg[50] = {'\0'};
     char* buf;
-    DataFServer=fopen("DFS.txt","a+");
     printf("Recieve Data From Server(%s)\n", buffer);
-    if(strstr(buffer,"hold")!=NULL)//  hold 
+    if(strstr(buffer,"seat")!=NULL)
+    {
+        //DataFServer=fopen(randstr,"w");
+        //fclose(DataFServer);
+    }
+    if(strstr(buffer,"hold")!=NULL)         //  hold 
     {
         char dest[100] = {0};
+        char *p;
         char *p1, *p2;
         p1 = strstr(buffer, "hold/");
         p2 = strstr(buffer, "/hold");
@@ -31,10 +43,12 @@ int on_server_message(int length, const char* buffer)
         {
             p1 += strlen("hold/");
             memcpy(dest, p1, p2 - p1-1);
-            fprintf(DataFServer,"%s\n", dest);
+            fprintf(DataFServer,"%s", dest);
+            Cards[0]=strtok(dest,"\n");
+            Cards[1]= strtok(NULL, "\n");
         }    
     }
-    if(strstr(buffer,"flop")!=NULL)//  flop 
+    if(strstr(buffer,"flop")!=NULL)          //  flop 
     {
         char dest[100] = {0};
         char *p1, *p2;
@@ -48,10 +62,13 @@ int on_server_message(int length, const char* buffer)
         {
             p1 += strlen("flop/");
             memcpy(dest, p1, p2 - p1-1);
-            fprintf(DataFServer,"%s\n", dest);
+            fprintf(DataFServer,"%s", dest);
+            Cards[2]=strtok(dest,"\n");
+            Cards[3]= strtok(NULL, "\n");
+            Cards[4]= strtok(NULL, "\n");
         }    
     }
-    if(strstr(buffer,"turn")!=NULL)//  turn 
+    if(strstr(buffer,"turn")!=NULL)          //  turn 
     {
         char dest[100] = {0};
         char *p1, *p2;
@@ -65,10 +82,11 @@ int on_server_message(int length, const char* buffer)
         {
             p1 += strlen("turn/");
             memcpy(dest, p1, p2 - p1-1);
-            fprintf(DataFServer,"%s\n", dest);
+            fprintf(DataFServer,"%s", dest);
+            Cards[5]=dest;
         }    
     }
-    if(strstr(buffer,"river")!=NULL)//  river
+    if(strstr(buffer,"river")!=NULL)        //  river
     {
         char dest[100] = {0};
         char *p1, *p2;
@@ -83,6 +101,7 @@ int on_server_message(int length, const char* buffer)
             p1 += strlen("river/");
             memcpy(dest, p1, p2 - p1-1);
             fprintf(DataFServer,"%s\n", dest);
+            Cards[6]=dest;
         }    
     }
     if(strstr(buffer,"inquire")!=NULL)
@@ -92,9 +111,8 @@ int on_server_message(int length, const char* buffer)
     }
     if(strstr(buffer,"pot-win")!=NULL)
     {
-
     }
-    fclose(DataFServer);
+    int i;
     return 0;
 }
 
@@ -153,6 +171,12 @@ int main(int argc, char *argv[])
     snprintf(reg_msg, sizeof(reg_msg) - 1, "reg: %d %s \n", my_id, "Mxin"); 
     send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
 
+    /* 建立随机文件保存牌信息 */
+    int randnum = rand();
+    sprintf(randstr, "%d", randnum);
+    strcat(randstr,".txt");
+    DataFServer=fopen(randstr,"a+");
+
     /* 接收server消息，进入游戏 */
    while(1)
    {
@@ -166,10 +190,8 @@ int main(int argc, char *argv[])
           }
       } 
    }
-   fclose(DataFServer);
-   DataFServer=fopen("DFS.txt","w");
-   fclose(DataFServer);
    /* 关闭socket */
    close(m_socket_id);
+   fclose(DataFServer);
    return 0;
 }
