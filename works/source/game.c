@@ -16,18 +16,39 @@ struct tm * timeinfo;
 char randstr[25];
 
 char* Cards[7];
+int n=0;
+int call=0;
+
+char *Trim(char *s)  
+{  
+   int n;  
+   for(n = strlen(s) - 1; n >= 0; n--)  
+   {  
+      if(s[n]!=' ' && s[n]!='\t' && s[n]!='\n')  
+      break;  
+      s[n+1] = '\0';  
+   }
+   for(n = 0; n <= strlen(s) - 1; n++)  
+   {  
+      if(s[n]!=' ' && s[n]!='\t' && s[n]!='\n')  
+      break;  
+      s[n-1] = '\0';  
+   }   
+   return s;  
+} 
 
 /* 处理server的消息 */
 int on_server_message(int length, const char* buffer)
 {
     char reg_msg[50] = {'\0'};
     char* buf;
+    char *result = NULL;
     printf("Recieve Data From Server(%s)\n", buffer);
     if(strstr(buffer,"seat")!=NULL)
     {
-        //DataFServer=fopen(randstr,"w");
-        //fclose(DataFServer);
+        fprintf(DataFServer,"%s", "\n\n");
     }
+
     if(strstr(buffer,"hold")!=NULL)         //  hold 
     {
         char dest[100] = {0};
@@ -41,11 +62,17 @@ int on_server_message(int length, const char* buffer)
         }
         else 
         {
-            p1 += strlen("hold/");
-            memcpy(dest, p1, p2 - p1-1);
-            fprintf(DataFServer,"%s", dest);
-            Cards[0]=strtok(dest,"\n");
-            Cards[1]= strtok(NULL, "\n");
+            p1 += strlen("hold/\n");
+            memcpy(dest, p1, p2 - p1);
+            result = strtok(dest,"\n");
+            while( result != NULL ) 
+            {
+               Cards[n++]=result;
+               fprintf(DataFServer,"%s", Cards[n-1]);
+               result = strtok( NULL,"\n");
+            }
+            fprintf(DataFServer,"%s", strtok(Cards[0]," ")); 
+            fprintf(DataFServer,"%s", strtok(NULL," ")); 
         }    
     }
     if(strstr(buffer,"flop")!=NULL)          //  flop 
@@ -60,12 +87,15 @@ int on_server_message(int length, const char* buffer)
         }
         else 
         {
-            p1 += strlen("flop/");
-            memcpy(dest, p1, p2 - p1-1);
-            fprintf(DataFServer,"%s", dest);
-            Cards[2]=strtok(dest,"\n");
-            Cards[3]= strtok(NULL, "\n");
-            Cards[4]= strtok(NULL, "\n");
+            p1 += strlen("flop/\n");
+            memcpy(dest, p1, p2 - p1);
+            result = strtok(dest,"\n");
+            while( result != NULL ) 
+            {
+               Cards[n++]=result;
+               fprintf(DataFServer,"%s", Cards[n-1]);
+               result = strtok( NULL,"\n");
+            }  
         }    
     }
     if(strstr(buffer,"turn")!=NULL)          //  turn 
@@ -80,10 +110,15 @@ int on_server_message(int length, const char* buffer)
         }
         else 
         {
-            p1 += strlen("turn/");
-            memcpy(dest, p1, p2 - p1-1);
-            fprintf(DataFServer,"%s", dest);
-            Cards[5]=dest;
+            p1 += strlen("turn/\n");
+            memcpy(dest, p1, p2 - p1);
+            result = strtok(dest,"\n");
+            while( result != NULL ) 
+            {
+               Cards[n++]=result;
+               fprintf(DataFServer,"%s", Cards[n-1]);
+               result = strtok( NULL,"\n");
+            } 
         }    
     }
     if(strstr(buffer,"river")!=NULL)        //  river
@@ -98,10 +133,16 @@ int on_server_message(int length, const char* buffer)
         }
         else 
         {
-            p1 += strlen("river/");
-            memcpy(dest, p1, p2 - p1-1);
-            fprintf(DataFServer,"%s\n", dest);
-            Cards[6]=dest;
+            p1 += strlen("river/\n");
+            memcpy(dest, p1, p2 - p1);
+            result = strtok(dest,"\n");
+            while( result != NULL ) 
+            {
+               Cards[n++]=result;
+               fprintf(DataFServer,"%s", Cards[n-1]);
+               result = strtok( NULL,"\n");
+            } 
+            n=0;
         }    
     }
     if(strstr(buffer,"inquire")!=NULL)
@@ -111,8 +152,8 @@ int on_server_message(int length, const char* buffer)
     }
     if(strstr(buffer,"pot-win")!=NULL)
     {
+
     }
-    int i;
     return 0;
 }
 
