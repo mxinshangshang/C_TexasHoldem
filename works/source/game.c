@@ -11,38 +11,23 @@
 int m_socket_id = -1;
 
 FILE *DataFServer;
-time_t rawtime;
-struct tm * timeinfo;
 char randstr[25];
-
 char* Cards[7];
+char* color[7];
+char* num[7];
 int n=0;
 int call=0;
-
-char *Trim(char *s)  
-{  
-   int n;  
-   for(n = strlen(s) - 1; n >= 0; n--)  
-   {  
-      if(s[n]!=' ' && s[n]!='\t' && s[n]!='\n')  
-      break;  
-      s[n+1] = '\0';  
-   }
-   for(n = 0; n <= strlen(s) - 1; n++)  
-   {  
-      if(s[n]!=' ' && s[n]!='\t' && s[n]!='\n')  
-      break;  
-      s[n-1] = '\0';  
-   }   
-   return s;  
-} 
 
 /* 处理server的消息 */
 int on_server_message(int length, const char* buffer)
 {
     char reg_msg[50] = {'\0'};
-    char* buf;
+    char *buf;
     char *result = NULL;
+    char dest[100] = {0};
+    char *p, *p1, *p2;
+    int i,j;
+    int dui=0;
     printf("Recieve Data From Server(%s)\n", buffer);
     if(strstr(buffer,"seat")!=NULL)
     {
@@ -51,9 +36,6 @@ int on_server_message(int length, const char* buffer)
 
     if(strstr(buffer,"hold")!=NULL)         //  hold 
     {
-        char dest[100] = {0};
-        char *p;
-        char *p1, *p2;
         p1 = strstr(buffer, "hold/");
         p2 = strstr(buffer, "/hold");
         if (p1 == NULL || p2 == NULL || p1 > p2) 
@@ -68,17 +50,23 @@ int on_server_message(int length, const char* buffer)
             while( result != NULL ) 
             {
                Cards[n++]=result;
-               fprintf(DataFServer,"%s", Cards[n-1]);
+               //fprintf(DataFServer,"%s", Cards[n-1]);
                result = strtok( NULL,"\n");
             }
-            fprintf(DataFServer,"%s", strtok(Cards[0]," ")); 
-            fprintf(DataFServer,"%s", strtok(NULL," ")); 
+            color[0]=strtok(Cards[0]," ");        //第一张手牌
+            fprintf(DataFServer,"%s ", color[0]); 
+            num[0]=strtok(NULL," ");
+            fprintf(DataFServer,"%s ", num[0]); 
+            color[1]=strtok(Cards[1]," ");        //第二张手牌
+            fprintf(DataFServer,"%s ", color[1]); 
+            num[1]=strtok(NULL," ");
+            fprintf(DataFServer,"%s \n", num[1]); 
+
+            call=1;
         }    
     }
     if(strstr(buffer,"flop")!=NULL)          //  flop 
     {
-        char dest[100] = {0};
-        char *p1, *p2;
         p1 = strstr(buffer, "flop/");
         p2 = strstr(buffer, "/flop");
         if (p1 == NULL || p2 == NULL || p1 > p2) 
@@ -93,15 +81,46 @@ int on_server_message(int length, const char* buffer)
             while( result != NULL ) 
             {
                Cards[n++]=result;
-               fprintf(DataFServer,"%s", Cards[n-1]);
+               //fprintf(DataFServer,"%s", Cards[n-1]);
                result = strtok( NULL,"\n");
-            }  
+            } 
+            color[2]=strtok(Cards[2]," ");            //第三张手牌
+            fprintf(DataFServer,"%s ", color[2]); 
+            num[2]=strtok(NULL," ");
+            fprintf(DataFServer,"%s ", num[2]); 
+            color[3]=strtok(Cards[3]," ");            //第四张手牌
+            fprintf(DataFServer,"%s ", color[3]); 
+            num[3]=strtok(NULL," ");
+            fprintf(DataFServer,"%s ", num[3]); 
+            color[4]=strtok(Cards[4]," ");            //第五张手牌
+            fprintf(DataFServer,"%s ", color[4]); 
+            num[4]=strtok(NULL," ");
+            fprintf(DataFServer,"%s \n", num[4]);
+            /*for(i=0;i<7;i++)
+            {
+                for(j=i+1;j<7;j++)
+                {
+                   if(num[i]==num[j])
+                   {
+                      dui++;
+                   }
+                }
+            }
+            if(dui!=0)
+            {
+               call=1;
+            }
+            else 
+            {
+               snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
+               send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);            
+            }
+            fprintf(DataFServer,"%d \n", dui-1);
+            dui=0;*/
         }    
     }
     if(strstr(buffer,"turn")!=NULL)          //  turn 
     {
-        char dest[100] = {0};
-        char *p1, *p2;
         p1 = strstr(buffer, "turn/");
         p2 = strstr(buffer, "/turn");
         if (p1 == NULL || p2 == NULL || p1 > p2) 
@@ -116,15 +135,15 @@ int on_server_message(int length, const char* buffer)
             while( result != NULL ) 
             {
                Cards[n++]=result;
-               fprintf(DataFServer,"%s", Cards[n-1]);
+               //fprintf(DataFServer,"%s", Cards[n-1]);
                result = strtok( NULL,"\n");
-            } 
+            }
+            snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
+            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);    
         }    
     }
     if(strstr(buffer,"river")!=NULL)        //  river
     {
-        char dest[100] = {0};
-        char *p1, *p2;
         p1 = strstr(buffer, "river/");
         p2 = strstr(buffer, "/river");
         if (p1 == NULL || p2 == NULL || p1 > p2) 
@@ -139,16 +158,27 @@ int on_server_message(int length, const char* buffer)
             while( result != NULL ) 
             {
                Cards[n++]=result;
-               fprintf(DataFServer,"%s", Cards[n-1]);
+               //fprintf(DataFServer,"%s", Cards[n-1]);
                result = strtok( NULL,"\n");
-            } 
+            }
+            snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
+            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);    
             n=0;
         }    
     }
     if(strstr(buffer,"inquire")!=NULL)
     {
-        snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
-        send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
+        if(call==1)
+        {
+           snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
+           call=0;
+        }
+        else 
+        {
+           snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);            
+        }
     }
     if(strstr(buffer,"pot-win")!=NULL)
     {
