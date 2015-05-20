@@ -17,6 +17,8 @@ char* color[7];
 char* num[7];
 int n=0;
 int call=0;
+int check=0;
+int fold=0;
 
 /* 处理server的消息 */
 int on_server_message(int length, const char* buffer)
@@ -110,13 +112,18 @@ int on_server_message(int length, const char* buffer)
             {
                call=1;
             }
-            else 
+            else if(dui>=3)
             {
-               snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
-               send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);            
+               check=1;           
             }
+            else
+            {
+               fold=1;           
+            }*/
             fprintf(DataFServer,"%d \n", dui-1);
-            dui=0;*/
+            dui=0;
+
+            check=1;
         }    
     }
     if(strstr(buffer,"turn")!=NULL)          //  turn 
@@ -138,8 +145,7 @@ int on_server_message(int length, const char* buffer)
                //fprintf(DataFServer,"%s", Cards[n-1]);
                result = strtok( NULL,"\n");
             }
-            snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
-            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);    
+            check=1;  
         }    
     }
     if(strstr(buffer,"river")!=NULL)        //  river
@@ -161,8 +167,7 @@ int on_server_message(int length, const char* buffer)
                //fprintf(DataFServer,"%s", Cards[n-1]);
                result = strtok( NULL,"\n");
             }
-            snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
-            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);    
+            check=1;   
             n=0;
         }    
     }
@@ -174,10 +179,17 @@ int on_server_message(int length, const char* buffer)
            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
            call=0;
         }
-        else 
+        else if(check==1)
         {
            snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
-           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);            
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0); 
+           check=0;           
+        }
+        else if(fold==1)
+        {
+           snprintf(reg_msg, sizeof(reg_msg) - 1, "fold\n"); 
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);    
+           fold=0;          
         }
     }
     if(strstr(buffer,"pot-win")!=NULL)
