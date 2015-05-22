@@ -12,9 +12,12 @@ int m_socket_id = -1;
 
 FILE *DataFServer;
 char randstr[25];
+char* CARDS[13]={"2","3","4","5","6","7","8","9","10","J","Q","K","A"};
+int REPEAT[13]={0,0,0,0,0,0,0,0,0,0,0,0,0};
 char* Cards[7];
 char* color[7];
 char* num[7];
+int re_num=0;
 int n=0;
 int call=0;
 int check=0;
@@ -34,7 +37,7 @@ int on_server_message(int length, const char* buffer)
     printf("Recieve Data From Server(%s)\n", buffer);
     if(strstr(buffer,"seat")!=NULL)
     {
-        fprintf(DataFServer,"%s", "\n\n");
+       fprintf(DataFServer,"\r");
     }
 
     if(strstr(buffer,"hold")!=NULL)         //  hold 
@@ -62,10 +65,10 @@ int on_server_message(int length, const char* buffer)
             num[1]=strtok(NULL," ");
             fprintf(DataFServer,"%s %s %s %s\n", color[0], num[0], color[1], num[1]); 
 
-            call=1;
+            check=1;
         }    
     }
-    if(strstr(buffer,"flop")!=NULL)          //  flop 
+    if(strstr(buffer,"flop")!=NULL)               //  flop 
     {
         p1 = strstr(buffer, "flop/");
         p2 = strstr(buffer, "/flop");
@@ -91,32 +94,38 @@ int on_server_message(int length, const char* buffer)
             color[4]=strtok(Cards[4]," ");            //第五张手牌
             num[4]=strtok(NULL," ");
             fprintf(DataFServer,"%s %s %s %s %s %s\n", color[2], num[2], color[3], num[3], color[4], num[4]); 
-            /*for(i=0;i<7;i++)
+            for(i=0;i<13;i++)
             {
-                for(j=i+1;j<7;j++)
+                for(j=i+1;j<5;j++)
                 {
-                   if(num[i]==num[j])
+                   if(CARDS[i]==num[j])
                    {
-                      dui++;
+                      REPEAT[i]++;
                    }
                 }
             }
-            if(dui!=0)
+            for(i=0;i<13;i++)
             {
-               call=1;
+                if(REPEAT[i]>=2)
+                {
+                   re_num++;
+                   fprintf(DataFServer,"%d\n", REPEAT[i]);
+                   REPEAT[i]=0;                  
+                }
             }
-            else if(dui>=3)
+            if(re_num>=2)
             {
-               check=1;           
+                call=0; 
+                check=1;
+                fold=0;
             }
             else
             {
-               fold=1;           
-            }*/
-            fprintf(DataFServer,"%d \n", dui-1);
-            dui=0;
-
-            check=1;
+                call=0; 
+                check=0;
+                fold=1;
+            }
+            re_num=0;
         }    
     }
     if(strstr(buffer,"turn")!=NULL)          //  turn 
@@ -141,7 +150,38 @@ int on_server_message(int length, const char* buffer)
             color[5]=strtok(Cards[5]," ");            //第六张手牌
             num[5]=strtok(NULL," "); 
             fprintf(DataFServer,"%s %s\n", color[5], num[5]);
-            check=1;  
+            for(i=0;i<13;i++)
+            {
+                for(j=i+1;j<6;j++)
+                {
+                   if(CARDS[i]==num[j])
+                   {
+                      REPEAT[i]++;
+                   }
+                }
+            }
+            for(i=0;i<13;i++)
+            {
+                if(REPEAT[i]>=2)
+                {
+                   re_num++;
+                   //fprintf(DataFServer,"%d\n", REPEAT[i]);
+                   REPEAT[i]=0;                  
+                }
+            }
+            if(re_num>=2)
+            {
+                call=0; 
+                check=1;
+                fold=0;
+            }
+            else
+            {
+                call=0; 
+                check=0;
+                fold=1;
+            }
+            re_num=0;
         }    
     }
     if(strstr(buffer,"river")!=NULL)        //  river
@@ -165,37 +205,69 @@ int on_server_message(int length, const char* buffer)
             }
             color[6]=strtok(Cards[6]," ");            //第七张手牌
             num[6]=strtok(NULL," "); 
-            fprintf(DataFServer,"%s %s\n", color[6], num[6]);  
+            fprintf(DataFServer,"%s %s\n", color[6], num[6]); 
+            for(i=0;i<13;i++)
+            {
+                for(j=i+1;j<7;j++)
+                {
+                   if(CARDS[i]==num[j])
+                   {
+                      REPEAT[i]++;
+                   }
+                }
+            }
+            for(i=0;i<13;i++)
+            {
+                if(REPEAT[i]>=2)
+                {
+                   re_num++;
+                   //fprintf(DataFServer,"%d\n", REPEAT[i]);
+                   REPEAT[i]=0;                  
+                }
+            }
+            if(re_num>=2)
+            {
+                call=0; 
+                check=1;
+                fold=0;
+            }
+            else
+            {
+                call=0; 
+                check=0;
+                fold=1;
+            }
+            re_num=0;
             n=0;
         }    
     }
     if(strstr(buffer,"inquire")!=NULL)
     {
-        snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
-        send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
-        fprintf(DataFServer,"Action: call\n"); 
-        /*if(call==1)
+        if(call==1)
         {
            call=0;
            snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
         }
-        else if(check==1)
-        {
-           check=0;       
-           snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
-           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);     
-        }
         else if(fold==1)
         {
-           fold=0;  
+           fold=0;
            snprintf(reg_msg, sizeof(reg_msg) - 1, "fold\n"); 
-           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);            
-        }*/
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);       
+        }
+        else
+        { 
+           check=0; 
+           snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);               
+        }
     }
     if(strstr(buffer,"pot-win")!=NULL)
     {
-
+        for(i=0;i<13;i++)
+        {
+            REPEAT[i]=0;
+        }
     }
     fclose(DataFServer);
     return 0;
