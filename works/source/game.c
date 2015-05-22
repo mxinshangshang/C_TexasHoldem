@@ -30,6 +30,7 @@ int on_server_message(int length, const char* buffer)
     char *p, *p1, *p2;
     int i,j;
     int dui=0;
+    DataFServer=fopen(randstr,"a+");
     printf("Recieve Data From Server(%s)\n", buffer);
     if(strstr(buffer,"seat")!=NULL)
     {
@@ -56,13 +57,10 @@ int on_server_message(int length, const char* buffer)
                result = strtok( NULL,"\n");
             }
             color[0]=strtok(Cards[0]," ");        //第一张手牌
-            fprintf(DataFServer,"%s ", color[0]); 
             num[0]=strtok(NULL," ");
-            fprintf(DataFServer,"%s ", num[0]); 
             color[1]=strtok(Cards[1]," ");        //第二张手牌
-            fprintf(DataFServer,"%s ", color[1]); 
             num[1]=strtok(NULL," ");
-            fprintf(DataFServer,"%s \n", num[1]); 
+            fprintf(DataFServer,"%s %s %s %s\n", color[0], num[0], color[1], num[1]); 
 
             call=1;
         }    
@@ -87,17 +85,12 @@ int on_server_message(int length, const char* buffer)
                result = strtok( NULL,"\n");
             } 
             color[2]=strtok(Cards[2]," ");            //第三张手牌
-            fprintf(DataFServer,"%s ", color[2]); 
             num[2]=strtok(NULL," ");
-            fprintf(DataFServer,"%s ", num[2]); 
             color[3]=strtok(Cards[3]," ");            //第四张手牌
-            fprintf(DataFServer,"%s ", color[3]); 
             num[3]=strtok(NULL," ");
-            fprintf(DataFServer,"%s ", num[3]); 
             color[4]=strtok(Cards[4]," ");            //第五张手牌
-            fprintf(DataFServer,"%s ", color[4]); 
             num[4]=strtok(NULL," ");
-            fprintf(DataFServer,"%s \n", num[4]);
+            fprintf(DataFServer,"%s %s %s %s %s %s\n", color[2], num[2], color[3], num[3], color[4], num[4]); 
             /*for(i=0;i<7;i++)
             {
                 for(j=i+1;j<7;j++)
@@ -145,6 +138,9 @@ int on_server_message(int length, const char* buffer)
                //fprintf(DataFServer,"%s", Cards[n-1]);
                result = strtok( NULL,"\n");
             }
+            color[5]=strtok(Cards[5]," ");            //第六张手牌
+            num[5]=strtok(NULL," "); 
+            fprintf(DataFServer,"%s %s\n", color[5], num[5]);
             check=1;  
         }    
     }
@@ -167,35 +163,41 @@ int on_server_message(int length, const char* buffer)
                //fprintf(DataFServer,"%s", Cards[n-1]);
                result = strtok( NULL,"\n");
             }
-            check=1;   
+            color[6]=strtok(Cards[6]," ");            //第七张手牌
+            num[6]=strtok(NULL," "); 
+            fprintf(DataFServer,"%s %s\n", color[6], num[6]);  
             n=0;
         }    
     }
     if(strstr(buffer,"inquire")!=NULL)
     {
-        if(call==1)
+        snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
+        send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
+        fprintf(DataFServer,"Action: call\n"); 
+        /*if(call==1)
         {
+           call=0;
            snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
-           call=0;
         }
         else if(check==1)
         {
+           check=0;       
            snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
-           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0); 
-           check=0;           
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);     
         }
         else if(fold==1)
         {
+           fold=0;  
            snprintf(reg_msg, sizeof(reg_msg) - 1, "fold\n"); 
-           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);    
-           fold=0;          
-        }
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);            
+        }*/
     }
     if(strstr(buffer,"pot-win")!=NULL)
     {
 
     }
+    fclose(DataFServer);
     return 0;
 }
 
@@ -258,7 +260,6 @@ int main(int argc, char *argv[])
     int randnum = rand();
     sprintf(randstr, "%d", randnum);
     strcat(randstr,".txt");
-    DataFServer=fopen(randstr,"a+");
 
     /* 接收server消息，进入游戏 */
    while(1)
@@ -275,6 +276,5 @@ int main(int argc, char *argv[])
    }
    /* 关闭socket */
    close(m_socket_id);
-   fclose(DataFServer);
    return 0;
 }
