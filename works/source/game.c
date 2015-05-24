@@ -12,6 +12,7 @@
 int m_socket_id = -1;
 
 FILE *DataFServer;
+FILE *Server;
 time_t now;
 struct tm *curTime;
 char filename[256];
@@ -51,14 +52,16 @@ int on_server_message(int length, const char* buffer)
     int i,j;
     int dui=0;
     DataFServer=fopen(filename,"a+");
-    //fprintf(DataFServer,"____________________________________________Server\n%s\n", buffer);
-    if(strstr(buffer,"seat")!=NULL)         //  hold 
+    Server=fopen("server.txt","a+");    
+    fprintf(Server,"____________________________________________Server\n%s\n", buffer);
+    fprintf(DataFServer,"____________________________________________Server\n");
+    if(strstr(buffer,"/seat")!=NULL)         //  seat 
     {
-       fprintf(DataFServer,"____________________________________________Server\n");
+
     }    
 
 
-    if(strstr(buffer,"hold")!=NULL)         //  hold 
+    if(strstr(buffer,"/hold")!=NULL)         //  hold 
     {
         p1 = strstr(buffer, "hold/");
         p2 = strstr(buffer, "/hold");
@@ -80,10 +83,11 @@ int on_server_message(int length, const char* buffer)
             num[1]=buf4;
             //printf("hold:%s %s %s %s\n", color[0], num[0], color[1], num[1]);
             fprintf(DataFServer,"hold:%s %s %s %s\n", color[0], num[0], color[1], num[1]);
+            
             check=1;
         }    
     }
-    if(strstr(buffer,"flop")!=NULL)               //  flop 
+    if(strstr(buffer,"/flop")!=NULL)               //  flop 
     {
         p1 = strstr(buffer, "flop/");
         p2 = strstr(buffer, "/flop");
@@ -111,9 +115,9 @@ int on_server_message(int length, const char* buffer)
             fprintf(DataFServer,"flop:%s %s %s %s %s %s\n", color[2], num[2], color[3], num[3], color[4], num[4]);
             for(i=0;i<13;i++)
             {
-                for(j=i+1;j<5;j++)
+                for(j=0;j<5;j++)
                 {
-                   if(CARDS[i]==num[j])
+                   if(strstr(num[j],CARDS[i])!=NULL)
                    {
                       REPEAT[i]++;
                    }
@@ -127,7 +131,8 @@ int on_server_message(int length, const char* buffer)
                    REPEAT[i]=0;                  
                 }
             }
-            printf("----------------5re_num:%d\n", re_num);
+            printf("- - - - - - - - - - - - - - - 5re_num:%d\n", re_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 5re_num:%d\n", re_num);
             if(re_num>=2)
             {
                 call=0; 
@@ -143,7 +148,7 @@ int on_server_message(int length, const char* buffer)
             re_num=0;
         }    
     }
-    if(strstr(buffer,"turn")!=NULL)          //  turn 
+    if(strstr(buffer,"/turn")!=NULL)          //  turn 
     {
         p1 = strstr(buffer, "turn/");
         p2 = strstr(buffer, "/turn");
@@ -163,9 +168,9 @@ int on_server_message(int length, const char* buffer)
             fprintf(DataFServer,"turn:%s %s\n", color[5], num[5]);
             for(i=0;i<13;i++)
             {
-                for(j=i+1;j<6;j++)
+                for(j=0;j<6;j++)
                 {
-                   if(CARDS[i]==num[j])
+                   if(strstr(num[j],CARDS[i])!=NULL)
                    {
                       REPEAT[i]++;
                    }
@@ -180,7 +185,8 @@ int on_server_message(int length, const char* buffer)
                    REPEAT[i]=0;                  
                 }
             }
-            printf("----------------6re_num:%d\n", re_num);
+            printf("- - - - - - - - - - - - - - - 6re_num:%d\n", re_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 6re_num:%d\n", re_num);
             if(re_num>=2)
             {
                 call=0; 
@@ -196,7 +202,7 @@ int on_server_message(int length, const char* buffer)
             re_num=0;
         }    
     }
-    if(strstr(buffer,"river")!=NULL)        //  river
+    if(strstr(buffer,"/river")!=NULL)        //  river
     {
         p1 = strstr(buffer, "river/");
         p2 = strstr(buffer, "/river");
@@ -216,9 +222,9 @@ int on_server_message(int length, const char* buffer)
             fprintf(DataFServer,"river:%s %s\n", color[6], num[6]);
             for(i=0;i<13;i++)
             {
-                for(j=i+1;j<7;j++)
+                for(j=0;j<7;j++)
                 {
-                   if(CARDS[i]==num[j])
+                   if(strstr(num[j],CARDS[i])!=NULL)
                    {
                       REPEAT[i]++;
                    }
@@ -233,7 +239,8 @@ int on_server_message(int length, const char* buffer)
                    REPEAT[i]=0;                  
                 }
             }
-            printf("----------------7re_num:%d\n", re_num);
+            printf("- - - - - - - - - - - - - - - 7re_num:%d\n", re_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 7re_num:%d\n", re_num);
             if(re_num>=2)
             {
                 call=0; 
@@ -250,8 +257,14 @@ int on_server_message(int length, const char* buffer)
             n=0;
         }    
     }
-    if(strstr(buffer,"inquire")!=NULL)
+    if(strstr(buffer,"inquire/")!=NULL)
     {
+        int i;
+        for(i=0;i<13;i++)
+        {
+            REPEAT[i]=0;
+        }
+        
         if(call==1)
         {
            call=0;
@@ -279,6 +292,7 @@ int on_server_message(int length, const char* buffer)
         }
     }
     fclose(DataFServer);
+    fclose(Server);
     return 0;
 }
 
