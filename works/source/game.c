@@ -6,12 +6,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <regex.h>
 #include <time.h>
 
 int m_socket_id = -1;
 
 FILE *DataFServer;
-char randstr[25];
+time_t now;
+struct tm *curTime;
+char filename[256];
+
+char hold[] = "hold/(.*)/hold";
+char flop[] = "^(flop/\n)(.*)(/flop\n)$";
+char turn[] = "^(turn/\n)(.*)(/turn\n)$";
+char river[] = "^(river/\n)(.*)(/river\n)$";
+regex_t reg;
+size_t  len;
+int err;
+char errbuf[1024];
+int nm=10;
+regmatch_t pmatch[10];
+
 char* CARDS[13]={"2","3","4","5","6","7","8","9","10","J","Q","K","A"};
 int REPEAT[13]={0,0,0,0,0,0,0,0,0,0,0,0,0};
 char* Cards[7];
@@ -33,223 +48,54 @@ int on_server_message(int length, const char* buffer)
     char *p, *p1, *p2;
     int i,j;
     int dui=0;
-    DataFServer=fopen(randstr,"a+");
-    printf("Recieve Data From Server(%s)\n", buffer);
-    if(strstr(buffer,"seat")!=NULL)
+    DataFServer=fopen(filename,"a+");
+    printf("Recieve Data From Server___________\n%s\n", buffer);
+    //fprintf(DataFServer,"Recieve Data From Server___________\n%s\n", buffer);
+    
+    if(regcomp(&reg,hold,REG_EXTENDED)<0)
     {
-       fprintf(DataFServer,"\r");
+        regerror(err,&reg,errbuf,sizeof(errbuf));
+        printf("error: regcomp:%s\n",errbuf);
     }
+    err = regexec(&reg,buffer,(size_t)nm,pmatch,0);
+    if(err == REG_NOMATCH)
+    {
+        printf("no match\n");
+        //exit(-1);
+    }
+    else if(err)
+    {
+        regerror(err,&reg,errbuf,sizeof(errbuf));
+        printf("err:%s\n",errbuf);
+        //exit(-1);
+    }    
 
-    if(strstr(buffer,"hold")!=NULL)         //  hold 
-    {
-        p1 = strstr(buffer, "hold/");
-        p2 = strstr(buffer, "/hold");
-        if (p1 == NULL || p2 == NULL || p1 > p2) 
-        {
-            printf("Not found\n");
-        }
-        else 
-        {
-            p1 += strlen("hold/\n");
-            memcpy(dest, p1, p2 - p1);
-            result = strtok(dest,"\n");
-            while( result != NULL ) 
-            {
-               Cards[n++]=result;
-               //fprintf(DataFServer,"%s", Cards[n-1]);
-               result = strtok( NULL,"\n");
-            }
-            color[0]=strtok(Cards[0]," ");        //第一张手牌
-            num[0]=strtok(NULL," ");
-            color[1]=strtok(Cards[1]," ");        //第二张手牌
-            num[1]=strtok(NULL," ");
-            fprintf(DataFServer,"%s %s %s %s\n", color[0], num[0], color[1], num[1]); 
+    //for(i=0;i<10 && pmatch[i].rm_so!=-1;i++)
+    //{
+    //   int len;
+       len = pmatch[0].rm_eo-pmatch[0].rm_so;
+       if(len!=0)
+       {
+          memset(dest,'\0',sizeof(dest));
+          memcpy(dest,buffer+pmatch[0].rm_so,len);
+          //printf("%s\n",match);
+          //printf("Recieve Data From Server___________\n%s\n", dest);
+          fprintf(DataFServer,"__________hold:\n%s\n", dest);
+       }
+    //}
+    regfree(&reg);
 
-            check=1;
-        }    
-    }
-    if(strstr(buffer,"flop")!=NULL)               //  flop 
-    {
-        p1 = strstr(buffer, "flop/");
-        p2 = strstr(buffer, "/flop");
-        if (p1 == NULL || p2 == NULL || p1 > p2) 
-        {
-            printf("Not found\n");
-        }
-        else 
-        {
-            p1 += strlen("flop/\n");
-            memcpy(dest, p1, p2 - p1);
-            result = strtok(dest,"\n");
-            while( result != NULL ) 
-            {
-               Cards[n++]=result;
-               //fprintf(DataFServer,"%s", Cards[n-1]);
-               result = strtok( NULL,"\n");
-            } 
-            color[2]=strtok(Cards[2]," ");            //第三张手牌
-            num[2]=strtok(NULL," ");
-            color[3]=strtok(Cards[3]," ");            //第四张手牌
-            num[3]=strtok(NULL," ");
-            color[4]=strtok(Cards[4]," ");            //第五张手牌
-            num[4]=strtok(NULL," ");
-            fprintf(DataFServer,"%s %s %s %s %s %s\n", color[2], num[2], color[3], num[3], color[4], num[4]); 
-            for(i=0;i<13;i++)
-            {
-                for(j=i+1;j<5;j++)
-                {
-                   if(CARDS[i]==num[j])
-                   {
-                      REPEAT[i]++;
-                   }
-                }
-            }
-            for(i=0;i<13;i++)
-            {
-                if(REPEAT[i]>=2)
-                {
-                   re_num++;
-                   fprintf(DataFServer,"%d\n", REPEAT[i]);
-                   REPEAT[i]=0;                  
-                }
-            }
-            if(re_num>=2)
-            {
-                call=0; 
-                check=1;
-                fold=0;
-            }
-            else
-            {
-                call=0; 
-                check=0;
-                fold=1;
-            }
-            re_num=0;
-        }    
-    }
-    if(strstr(buffer,"turn")!=NULL)          //  turn 
-    {
-        p1 = strstr(buffer, "turn/");
-        p2 = strstr(buffer, "/turn");
-        if (p1 == NULL || p2 == NULL || p1 > p2) 
-        {
-            printf("Not found\n");
-        }
-        else 
-        {
-            p1 += strlen("turn/\n");
-            memcpy(dest, p1, p2 - p1);
-            result = strtok(dest,"\n");
-            while( result != NULL ) 
-            {
-               Cards[n++]=result;
-               //fprintf(DataFServer,"%s", Cards[n-1]);
-               result = strtok( NULL,"\n");
-            }
-            color[5]=strtok(Cards[5]," ");            //第六张手牌
-            num[5]=strtok(NULL," "); 
-            fprintf(DataFServer,"%s %s\n", color[5], num[5]);
-            for(i=0;i<13;i++)
-            {
-                for(j=i+1;j<6;j++)
-                {
-                   if(CARDS[i]==num[j])
-                   {
-                      REPEAT[i]++;
-                   }
-                }
-            }
-            for(i=0;i<13;i++)
-            {
-                if(REPEAT[i]>=2)
-                {
-                   re_num++;
-                   //fprintf(DataFServer,"%d\n", REPEAT[i]);
-                   REPEAT[i]=0;                  
-                }
-            }
-            if(re_num>=2)
-            {
-                call=0; 
-                check=1;
-                fold=0;
-            }
-            else
-            {
-                call=0; 
-                check=0;
-                fold=1;
-            }
-            re_num=0;
-        }    
-    }
-    if(strstr(buffer,"river")!=NULL)        //  river
-    {
-        p1 = strstr(buffer, "river/");
-        p2 = strstr(buffer, "/river");
-        if (p1 == NULL || p2 == NULL || p1 > p2) 
-        {
-            printf("Not found\n");
-        }
-        else 
-        {
-            p1 += strlen("river/\n");
-            memcpy(dest, p1, p2 - p1);
-            result = strtok(dest,"\n");
-            while( result != NULL ) 
-            {
-               Cards[n++]=result;
-               //fprintf(DataFServer,"%s", Cards[n-1]);
-               result = strtok( NULL,"\n");
-            }
-            color[6]=strtok(Cards[6]," ");            //第七张手牌
-            num[6]=strtok(NULL," "); 
-            fprintf(DataFServer,"%s %s\n", color[6], num[6]); 
-            for(i=0;i<13;i++)
-            {
-                for(j=i+1;j<7;j++)
-                {
-                   if(CARDS[i]==num[j])
-                   {
-                      REPEAT[i]++;
-                   }
-                }
-            }
-            for(i=0;i<13;i++)
-            {
-                if(REPEAT[i]>=2)
-                {
-                   re_num++;
-                   //fprintf(DataFServer,"%d\n", REPEAT[i]);
-                   REPEAT[i]=0;                  
-                }
-            }
-            if(re_num>=2)
-            {
-                call=0; 
-                check=1;
-                fold=0;
-            }
-            else
-            {
-                call=0; 
-                check=0;
-                fold=1;
-            }
-            re_num=0;
-            n=0;
-        }    
-    }
+    
+
     if(strstr(buffer,"inquire")!=NULL)
     {
-        if(call==1)
+        if(1==call)
         {
            call=0;
            snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
         }
-        else if(fold==1)
+        else if(1==fold)
         {
            fold=0;
            snprintf(reg_msg, sizeof(reg_msg) - 1, "fold\n"); 
@@ -329,9 +175,11 @@ int main(int argc, char *argv[])
     send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
 
     /* 建立随机文件保存牌信息 */
-    int randnum = rand();
-    sprintf(randstr, "%d", randnum);
-    strcat(randstr,".txt");
+    now = time(NULL);
+    curTime = localtime(&now);
+    sprintf(filename,"%04d-%02d-%02d %02d-%02d-%02d.txt",curTime->tm_year+1900,
+        curTime->tm_mon+1,curTime->tm_mday,curTime->tm_hour,curTime->tm_min,
+        curTime->tm_sec);
 
     /* 接收server消息，进入游戏 */
    while(1)
