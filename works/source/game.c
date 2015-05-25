@@ -17,6 +17,21 @@ time_t now;
 struct tm *curTime;
 char filename[256];
 
+char buf[128] = {0};
+char buf1[128] = {0};
+char buf2[128] = {0};
+char buf3[128] = {0};
+char buf4[128] = {0};
+char buf5[128] = {0};
+char buf6[128] = {0};
+char buf7[128] = {0};
+char buf8[128] = {0};
+char buf9[128] = {0};
+char buf10[128] = {0};
+char buf11[128] = {0};
+char buf12[128] = {0};
+char buf13[128] = {0};
+char buf14[128] = {0};
 char* CARDS[13]={"2","3","4","5","6","7","8","9","10","J","Q","K","A"};
 int REPEAT[13]={0,0,0,0,0,0,0,0,0,0,0,0,0};
 char* Cards[7];
@@ -32,21 +47,6 @@ int fold=0;
 int on_server_message(int length, const char* buffer)
 {
     char reg_msg[50] = {'\0'};
-    char buf[128] = {0};
-    char buf1[128] = {0};
-    char buf2[128] = {0};
-    char buf3[128] = {0};
-    char buf4[128] = {0};
-    char buf5[128] = {0};
-    char buf6[128] = {0};
-    char buf7[128] = {0};
-    char buf8[128] = {0};
-    char buf9[128] = {0};
-    char buf10[128] = {0};
-    char buf11[128] = {0};
-    char buf12[128] = {0};
-    char buf13[128] = {0};
-    char buf14[128] = {0};
     char dest[100] = {0};
     char *p, *p1, *p2;
     int i,j;
@@ -54,7 +54,7 @@ int on_server_message(int length, const char* buffer)
     DataFServer=fopen(filename,"a+");
     Server=fopen("server.txt","a+");    
     fprintf(Server,"____________________________________________Server\n%s\n", buffer);
-    fprintf(DataFServer,"____________________________________________Server\n");
+    fprintf(DataFServer,"____________________________________________\n");
     if(strstr(buffer,"/seat")!=NULL)         //  seat 
     {
 
@@ -127,12 +127,15 @@ int on_server_message(int length, const char* buffer)
             {
                 if(REPEAT[i]>=2)
                 {
-                   re_num++;
-                   REPEAT[i]=0;                  
+                   re_num++;                 
                 }
             }
-            printf("- - - - - - - - - - - - - - - 5re_num:%d\n", re_num);
-            fprintf(DataFServer,"- - - - - - - - - - - - - - - 5re_num:%d\n", re_num);
+            for(i=0;i<13;i++)
+            {
+                REPEAT[i]=0;
+            }
+            printf("- - - - - - - - - - - - - 5- - re_num:%d\n", re_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 5- - re_num:%d\n", re_num);
             if(re_num>=2)
             {
                 call=0; 
@@ -181,12 +184,15 @@ int on_server_message(int length, const char* buffer)
                 if(REPEAT[i]>=2)
                 {
                    re_num++;
-                   //fprintf(DataFServer,"%d\n", REPEAT[i]);
-                   REPEAT[i]=0;                  
+                   //fprintf(DataFServer,"%d\n", REPEAT[i]);                 
                 }
             }
-            printf("- - - - - - - - - - - - - - - 6re_num:%d\n", re_num);
-            fprintf(DataFServer,"- - - - - - - - - - - - - - - 6re_num:%d\n", re_num);
+            for(i=0;i<13;i++)
+            {
+                REPEAT[i]=0;
+            }
+            printf("- - - - - - - - - - - - - - 6- re_num:%d\n", re_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - 6- re_num:%d\n", re_num);
             if(re_num>=2)
             {
                 call=0; 
@@ -235,9 +241,12 @@ int on_server_message(int length, const char* buffer)
                 if(REPEAT[i]>=2)
                 {
                    re_num++;
-                   //fprintf(DataFServer,"%d\n", REPEAT[i]);
-                   REPEAT[i]=0;                  
+                   //fprintf(DataFServer,"%d\n", REPEAT[i]);                  
                 }
+            }
+            for(i=0;i<13;i++)
+            {
+                REPEAT[i]=0;
             }
             printf("- - - - - - - - - - - - - - - 7re_num:%d\n", re_num);
             fprintf(DataFServer,"- - - - - - - - - - - - - - - 7re_num:%d\n", re_num);
@@ -264,20 +273,24 @@ int on_server_message(int length, const char* buffer)
         {
             REPEAT[i]=0;
         }
-        
-        if(call==1)
+        /*if(strstr(buffer,"all_in")!=NULL)         //  seat 
+        {
+           snprintf(reg_msg, sizeof(reg_msg) - 1, "fold\n"); 
+           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);   
+        }*/
+        /*else if(call==1)
         {
            call=0;
            snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
-        }
-        else if(fold==1)
+        }*/
+        if(1==fold)
         {
            fold=0;
            snprintf(reg_msg, sizeof(reg_msg) - 1, "fold\n"); 
            send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);       
         }
-        else
+        else if(0==check)
         { 
            check=0; 
            snprintf(reg_msg, sizeof(reg_msg) - 1, "check\n"); 
@@ -361,7 +374,7 @@ int main(int argc, char *argv[])
     /* 接收server消息，进入游戏 */
    while(1)
    {
-      char buffer[1024] = {'\0'};
+      char buffer[256] = {'\0'};
       int length = recv(m_socket_id, buffer, sizeof(buffer) - 1, 0);
       if(length > 0)
       { 
