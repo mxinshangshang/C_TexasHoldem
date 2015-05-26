@@ -41,16 +41,47 @@ char* color[7];
 char* num[7];
 int re_num=0;
 int n=0;
+int is_hold=0;
+int is_first_time=0;
+int player_num=0;
 int call=0;
 int all_in=0;
 int check=0;
 int fold=0;
 
+int findsub(char* src, char* s)
+{
+    char *ptr=src, *p=s;
+    /* ptr2为src的末位置指针 */                       
+    char *ptr2=src+strlen(src), *prev=NULL;
+    /* 子串的长度和计数器 */    
+    int len=strlen(s), n=0;                    
+    for(;*ptr;ptr++)
+    {
+    /* 如果一开始子串就大于src,则退出 */
+        if(ptr2-ptr<len) 
+            break;
+    /* 寻找第一个相等的位置,然后从此位置开始匹配子串 */
+        for(prev=ptr;*prev==*p;prev++,p++)
+        {
+    /* 如果已经到了子串的末尾 */
+            if(*(p+1)==0||*(p+1)==10)          
+            {
+                n++;
+    /* 重新指向子串 */
+                p=s; 
+                break;
+            }
+        }
+    }
+    return n;
+}
+
 /* 处理server的消息 */
 int on_server_message(int length, const char* buffer)
 {
     char reg_msg[50] = {'\0'};
-    char dest[100] = {0};
+    char dest[256] = {0};
     char *p, *p1, *p2;
     int i,j;
     int dui=0;
@@ -59,10 +90,28 @@ int on_server_message(int length, const char* buffer)
     fprintf(Server,"____________________________________________Server\n%s\n", buffer);
     //fprintf(DataFServer,"____________________________________________\n");
     if(strstr(buffer,"/seat")!=NULL)         //  seat 
-    {
-
+    {            
+        check=1;
+        call=0; 
+        fold=0; 
+        p1 = strstr(buffer, "seat/");
+        p2 = strstr(buffer, "/seat");
+        if (p1 == NULL || p2 == NULL || p1 > p2) 
+        {
+            printf("Not found\n");
+        }
+        else 
+        {
+            p1 += strlen("seat/\n");
+            memcpy(dest, p1, p2 - p1);
+            if(is_first_time==0)
+            {
+                is_first_time=1;
+                player_num=findsub(dest,"2000")/2-1;
+                fprintf(Server,"player_num:%d\n", player_num);
+            }
+        }
     }    
-
 
     if(strstr(buffer,"/hold")!=NULL)         //  hold 
     {
@@ -88,10 +137,14 @@ int on_server_message(int length, const char* buffer)
             fprintf(DataFServer,"hold:%s %s %s %s\n", color[0], num[0], color[1], num[1]);
             
             check=1;
-        }    
+            call=0; 
+            fold=0; 
+        }
+        is_hold=1;    
     }
     if(strstr(buffer,"/flop")!=NULL)               //  flop 
-    {
+    {    
+        is_hold=0; 
         p1 = strstr(buffer, "flop/");
         p2 = strstr(buffer, "/flop");
         if (p1 == NULL || p2 == NULL || p1 > p2) 
@@ -184,6 +237,7 @@ int on_server_message(int length, const char* buffer)
     }
     if(strstr(buffer,"/turn")!=NULL)          //  turn 
     {
+        is_hold=0; 
         p1 = strstr(buffer, "turn/");
         p2 = strstr(buffer, "/turn");
         if (p1 == NULL || p2 == NULL || p1 > p2) 
@@ -268,6 +322,7 @@ int on_server_message(int length, const char* buffer)
     }
     if(strstr(buffer,"/river")!=NULL)        //  river
     {
+        is_hold=0; 
         p1 = strstr(buffer, "river/");
         p2 = strstr(buffer, "/river");
         if (p1 == NULL || p2 == NULL || p1 > p2) 
@@ -351,24 +406,36 @@ int on_server_message(int length, const char* buffer)
             n=0;
         }    
     }
-    if(strstr(buffer,"inquire/")!=NULL)
+    if(strstr(buffer,"/inquire")!=NULL)
     {
-        int i;
-        for(i=0;i<13;i++)
+        p1 = strstr(buffer, "inquire/");
+        p2 = strstr(buffer, "/inquire");
+        if (p1 == NULL || p2 == NULL || p1 > p2) 
         {
-            REPEAT[i]=0;
+            printf("Not found\n");
         }
-        /*if(strstr(buffer,"all_in")!=NULL)         //  seat 
+        else 
         {
-           snprintf(reg_msg, sizeof(reg_msg) - 1, "fold\n"); 
-           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);   
-        }*/
-        /*else if(call==1)
-        {
-           call=0;
-           snprintf(reg_msg, sizeof(reg_msg) - 1, "call\n"); 
-           send(m_socket_id, reg_msg, strlen(reg_msg) + 1, 0);
-        }*/
+            p1 += strlen("inquire/\n");
+            memcpy(dest, p1, p2 - p1);
+            if(strstr(dest, "fold")!=NULL)
+            {
+                i=findsub(dest,"fold");
+                if(i==player_num)
+                {
+                   check=1;
+                   fold=0; 
+                }
+            }
+            if(strstr(dest, "all_in")!=NULL && is_hold==1)
+            {
+               is_hold=0;
+               check=0;
+               fold=1;
+            }
+        }
+
+
         if(1==all_in)
         {
            all_in=0;
@@ -393,6 +460,10 @@ int on_server_message(int length, const char* buffer)
         for(i=0;i<13;i++)
         {
             REPEAT[i]=0;
+        }
+        for(i=0;i<4;i++)
+        {
+            REPEAT_C[i]=0;
         }
     }
     fclose(DataFServer);
