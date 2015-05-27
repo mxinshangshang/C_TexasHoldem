@@ -48,6 +48,7 @@ int call=0;
 int all_in=0;
 int check=0;
 int fold=0;
+int must_be=0;
 
 int findsub(char* src, char* s)
 {
@@ -83,7 +84,7 @@ int on_server_message(int length, const char* buffer)
     char reg_msg[50] = {'\0'};
     char dest[256] = {0};
     char *p, *p1, *p2;
-    int i,j;
+    int i,j,a,b,c;
     int dui=0;
     DataFServer=fopen(filename,"a+");
     Server=fopen("server.txt","a+");    
@@ -135,7 +136,35 @@ int on_server_message(int length, const char* buffer)
             num[1]=buf4;
             //printf("hold:%s %s %s %s\n", color[0], num[0], color[1], num[1]);
             fprintf(DataFServer,"hold:%s %s %s %s\n", color[0], num[0], color[1], num[1]);
-            
+
+            for(i=0;i<13;i++)
+            {
+                for(j=0;j<2;j++)
+                {
+                   if(strstr(num[j],CARDS[i])!=NULL)
+                   {
+                      REPEAT[i]++;
+                   }
+                }
+            }
+            for(i=0;i<13;i++)
+            {
+                if(REPEAT[i]==2)
+                {
+                   if(i<11)
+                   {
+                      break;
+                   }
+                   else if(i>10)
+                   {
+                       must_be=1;
+                   }
+                }
+            }
+            for(i=0;i<13;i++)
+            {
+                REPEAT[i]=0;
+            }          
             check=1;
             call=0; 
             fold=0; 
@@ -168,7 +197,8 @@ int on_server_message(int length, const char* buffer)
             sscanf(dest,"%*s %*s %*s %*s %*s %[^ ]",buf10);
             num[4]=buf10;
             //printf("flop:%s %s %s %s %s %s\n", color[2], num[2], color[3], num[3], color[4], num[4]); 
-            fprintf(DataFServer,"flop:%s %s %s %s %s %s\n", color[2], num[2], color[3], num[3], color[4], num[4]);
+            fprintf(DataFServer,"flop:%s %s %s %s %s %s\n", color[2], num[2], color[3], num[3], color[4], num[4]);          
+
             for(i=0;i<4;i++)
             {
                 for(j=0;j<5;j++)
@@ -203,9 +233,23 @@ int on_server_message(int length, const char* buffer)
                    }
                 }
             }
+            for(i=0;i<9;i++)
+            {
+                if(REPEAT[i]!=0)
+                {   
+                    if(REPEAT[i+1]!=0 && REPEAT[i+2]!=0 && REPEAT[i+3]!=0 && REPEAT[i+4]!=0)
+                    {
+                        call=0; 
+                        check=1;
+                        fold=0;
+                        break;
+                    }
+                }
+            }
+                              
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2)
+                if(REPEAT[i]>=2 && i>9)
                 {
                    re_num++;                 
                 }
@@ -288,9 +332,23 @@ int on_server_message(int length, const char* buffer)
                    }
                 }
             }
+            for(i=0;i<9;i++)
+            {
+                if(REPEAT[i]!=0)
+                {   
+                    if(REPEAT[i+1]!=0 && REPEAT[i+2]!=0 && REPEAT[i+3]!=0 && REPEAT[i+4]!=0)
+                    {
+                        call=0; 
+                        check=1;
+                        fold=0;
+                        break;
+                    }
+                }
+            }
+
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2)
+                if(REPEAT[i]>=2 && i>9)
                 {
                    re_num++;              
                 }
@@ -373,9 +431,23 @@ int on_server_message(int length, const char* buffer)
                    }
                 }
             }
+            for(i=0;i<9;i++)
+            {
+                if(REPEAT[i]!=0)
+                {   
+                    if(REPEAT[i+1]!=0 && REPEAT[i+2]!=0 && REPEAT[i+3]!=0 && REPEAT[i+4]!=0)
+                    {
+                        call=0; 
+                        check=1;
+                        fold=0;
+                        break;
+                    }
+                }
+            }
+
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2)
+                if(REPEAT[i]>=2 && i>9)
                 {
                    re_num++;                 
                 }
@@ -427,12 +499,13 @@ int on_server_message(int length, const char* buffer)
                    fold=0; 
                 }
             }
-            if(strstr(dest, "all_in")!=NULL && is_hold==1)
+            if(strstr(dest, "all_in")!=NULL && is_hold==1 && must_be==0)
             {
                is_hold=0;
                check=0;
                fold=1;
             }
+            must_be=0;
         }
 
 
