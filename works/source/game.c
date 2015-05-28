@@ -105,12 +105,12 @@ int on_server_message(int length, const char* buffer)
         {
             p1 += strlen("seat/\n");
             memcpy(dest, p1, p2 - p1);
-            if(is_first_time==0)
-            {
-                is_first_time=1;
-                player_num=findsub(dest,"2000")/2-1;
+            //if(is_first_time==0)
+            //{
+                //is_first_time=1;
+                player_num=findsub(dest,"\n")-2;
                 fprintf(Server,"player_num:%d\n", player_num);
-            }
+            //}
         }
     }    
 
@@ -136,7 +136,16 @@ int on_server_message(int length, const char* buffer)
             num[1]=buf4;
             //printf("hold:%s %s %s %s\n", color[0], num[0], color[1], num[1]);
             fprintf(DataFServer,"hold:%s %s %s %s\n", color[0], num[0], color[1], num[1]);
-
+            for(i=0;i<4;i++)
+            {
+                for(j=0;j<2;j++)
+                {
+                   if(strstr(color[j],COLOR[i])!=NULL)
+                   {
+                      REPEAT_C[i]++;
+                   }
+                }
+            }
             for(i=0;i<13;i++)
             {
                 for(j=0;j<2;j++)
@@ -147,27 +156,73 @@ int on_server_message(int length, const char* buffer)
                    }
                 }
             }
-            for(i=0;i<13;i++)
+
+            for(i=12;i>=0;i--)
             {
                 if(REPEAT[i]==2)
                 {
-                   if(i<11)
+                   if(i<6)
                    {
+                      check=0;
+                      call=0; 
+                      fold=1; 
                       break;
                    }
                    else if(i>10)
                    {
-                       must_be=1;
+                      must_be=1;
+                      check=1;
+                      call=0; 
+                      fold=0; 
+                      break;
                    }
+                   else
+                   {
+                      check=1;
+                      call=0; 
+                      fold=0; 
+                      break;
+                   }
+                }
+                if(REPEAT[i]==1 && i>0)
+                {
+                   if(REPEAT[i-1]==1 && i>6)
+                   {
+                      call=0; 
+                      check=1;
+                      fold=0; 
+                      break; 
+                    }
+                    else if(REPEAT[i-1]!=1 && i>8)
+                    {
+                       for(j=0;j<4;j++)
+                       {
+                          if(REPEAT_C[j]==2)
+                          {
+                             call=0; 
+                             check=1;
+                             fold=0; 
+                             break;        
+                          }
+                       }
+                    }
+                    else
+                    {
+                       check=0;
+                       call=0; 
+                       fold=1; 
+                       break; 
+                    }
                 }
             }
             for(i=0;i<13;i++)
             {
                 REPEAT[i]=0;
-            }          
-            check=1;
-            call=0; 
-            fold=0; 
+            }
+            for(i=0;i<4;i++)
+            {
+                REPEAT_C[i]=0;
+            }
         }
         is_hold=1;    
     }
@@ -215,7 +270,8 @@ int on_server_message(int length, const char* buffer)
                 {
                    call=0; 
                    check=1;
-                   fold=0;              
+                   fold=0;
+                   break;                
                 }
             }
             for(i=0;i<4;i++)
@@ -249,15 +305,24 @@ int on_server_message(int length, const char* buffer)
                               
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2 && i>9)
+                if(REPEAT[i]>=2)
                 {
                    re_num++;                 
                 }
-                if(REPEAT[i]>=3)
+                if(REPEAT[i]==3)
                 {
                    call=0; 
                    check=1;
-                   fold=0;                
+                   fold=0; 
+                   break;               
+                }
+                if(REPEAT[i]>3)
+                {
+                   all_in=1;
+                   call=0; 
+                   check=0;
+                   fold=0;    
+                   break;              
                 }
             }
             for(i=0;i<13;i++)
@@ -273,7 +338,7 @@ int on_server_message(int length, const char* buffer)
                 fold=0;
             }
             re_num=0;
-            if(check!=1)
+            if(check!=1 && all_in!=1)
             {
                 fold=1;
             }
@@ -314,7 +379,8 @@ int on_server_message(int length, const char* buffer)
                 {
                    call=0; 
                    check=1;
-                   fold=0;              
+                   fold=0;   
+                   break;             
                 }
             }
             for(i=0;i<4;i++)
@@ -348,15 +414,24 @@ int on_server_message(int length, const char* buffer)
 
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2 && i>9)
+                if(REPEAT[i]>=2)
                 {
                    re_num++;              
                 }
-                if(REPEAT[i]>=3)
+                if(REPEAT[i]==3)
                 {
                    call=0; 
                    check=1;
-                   fold=0;                
+                   fold=0;  
+                   break;                
+                }
+                if(REPEAT[i]>3)
+                {
+                   all_in=1;
+                   call=0; 
+                   check=0;
+                   fold=0;  
+                   break;                
                 }
             }
             for(i=0;i<13;i++)
@@ -372,7 +447,7 @@ int on_server_message(int length, const char* buffer)
                 fold=0;
             }
             re_num=0;
-            if(check!=1)
+            if(check!=1 && all_in!=1)
             {
                 fold=1;
             }
@@ -413,7 +488,8 @@ int on_server_message(int length, const char* buffer)
                 {
                    call=0; 
                    check=1;
-                   fold=0;              
+                   fold=0;  
+                   break;              
                 }
             }
             for(i=0;i<4;i++)
@@ -447,15 +523,24 @@ int on_server_message(int length, const char* buffer)
 
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2 && i>9)
+                if(REPEAT[i]>=2)
                 {
                    re_num++;                 
                 }
-                if(REPEAT[i]>=3)
+                if(REPEAT[i]==3)
                 {
                    call=0; 
                    check=1;
-                   fold=0;                
+                   fold=0;   
+                   break;               
+                }
+                if(REPEAT[i]>3)
+                {
+                   all_in=1;
+                   call=0; 
+                   check=0;
+                   fold=0;  
+                   break;                
                 }
             }
             for(i=0;i<13;i++)
@@ -471,7 +556,7 @@ int on_server_message(int length, const char* buffer)
                 fold=0;
             }
             re_num=0;
-            if(check!=1)
+            if(check!=1 && all_in!=1)
             {
                 fold=1;
             }
@@ -507,7 +592,6 @@ int on_server_message(int length, const char* buffer)
             }
             must_be=0;
         }
-
 
         if(1==all_in)
         {
