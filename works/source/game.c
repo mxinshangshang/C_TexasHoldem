@@ -39,7 +39,9 @@ int REPEAT_C[4]={0,0,0,0};
 char* Cards[7];
 char* color[7];
 char* num[7];
-int re_num=0;
+int pair_num=0;
+int three_num=0;
+int four_num=0;
 int n=0;
 int is_hold=0;
 int is_first_time=0;
@@ -161,7 +163,7 @@ int on_server_message(int length, const char* buffer)
             {
                 if(REPEAT[i]==2)
                 {
-                   if(i<6)
+                   if(i<8)//>=10 pair
                    {
                       check=0;
                       call=0; 
@@ -184,36 +186,46 @@ int on_server_message(int length, const char* buffer)
                       break;
                    }
                 }
-                if(REPEAT[i]==1 && i>0)
+                else if(REPEAT[i]==1)
                 {
-                   if(REPEAT[i-1]==1 && i>6)
+                   if(REPEAT[i-1]==1)
                    {
-                      call=0; 
-                      check=1;
-                      fold=0; 
-                      break; 
-                    }
-                    else if(REPEAT[i-1]!=1 && i>8)
-                    {
-                       for(j=0;j<4;j++)
-                       {
-                          if(REPEAT_C[j]==2)
-                          {
+                      if(i>=10)//J Q up
+                      {
+                        call=0; 
+                        check=1;
+                        fold=0; 
+                        break; 
+                      }
+                      else if(i>7 && i<10)//9 10 up
+                      {
+                        for(j=0;j<4;j++)
+                        {
+                           if(REPEAT_C[j]==2)
+                           {
                              call=0; 
                              check=1;
                              fold=0; 
                              break;        
-                          }
-                       }
+                            }
+                         }
+                      }
+                      else
+                      {
+                         check=0;
+                         call=0; 
+                         fold=1; 
+                         break;                         
+                      }
                     }
                     else
                     {
-                       check=0;
-                       call=0; 
-                       fold=1; 
-                       break; 
-                    }
-                }
+                        check=0;
+                        call=0; 
+                        fold=1; 
+                        break;                         
+                    }                    
+                 }
             }
             for(i=0;i<13;i++)
             {
@@ -305,39 +317,43 @@ int on_server_message(int length, const char* buffer)
                               
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2)
+                if(REPEAT[i]==2)
                 {
-                   re_num++;                 
+                   pair_num++;                 
                 }
                 if(REPEAT[i]==3)
                 {
-                   call=0; 
-                   check=1;
-                   fold=0; 
-                   break;               
+                   three_num++;                
                 }
                 if(REPEAT[i]>3)
                 {
-                   all_in=1;
-                   call=0; 
-                   check=0;
-                   fold=0;    
-                   break;              
+                   four_num++;               
                 }
             }
             for(i=0;i<13;i++)
             {
                 REPEAT[i]=0;
             }
-            printf("- - - - - - - - - - - - - 5- - re_num:%d\n", re_num);
-            fprintf(DataFServer,"- - - - - - - - - - - - - - - 5- - re_num:%d\n", re_num);
-            if(re_num>=2)
+            //printf("- - - - - - - - - - - - - 5- - re_num:%d\n", re_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 5- - pair_num:%d\n", pair_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 5- - three_num:%d\n", three_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 5- - four_num:%d\n", four_num);
+            if(pair_num>=1 || three_num>=1)
             {
-                call=0; 
-                check=1;
-                fold=0;
+               call=0; 
+               check=1;
+               fold=0;               
             }
-            re_num=0;
+            if(four_num==1)
+            {
+               all_in=1;
+               call=0; 
+               check=0;
+               fold=0;                 
+            }
+            pair_num=0;
+            three_num=0;
+            four_num=0;
             if(check!=1 && all_in!=1)
             {
                 fold=1;
@@ -414,39 +430,43 @@ int on_server_message(int length, const char* buffer)
 
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2)
+                if(REPEAT[i]==2)
                 {
-                   re_num++;              
+                   pair_num++;                 
                 }
                 if(REPEAT[i]==3)
                 {
-                   call=0; 
-                   check=1;
-                   fold=0;  
-                   break;                
+                   three_num++;                
                 }
                 if(REPEAT[i]>3)
                 {
-                   all_in=1;
-                   call=0; 
-                   check=0;
-                   fold=0;  
-                   break;                
+                   four_num++;               
                 }
             }
             for(i=0;i<13;i++)
             {
                 REPEAT[i]=0;
             }
-            printf("- - - - - - - - - - - - - - 6- re_num:%d\n", re_num);
-            fprintf(DataFServer,"- - - - - - - - - - - - - - 6- re_num:%d\n", re_num);
-            if(re_num>=2)
+            //printf("- - - - - - - - - - - - - - 6- re_num:%d\n", re_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - 6- pair_num:%d\n", pair_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - 6- three_num:%d\n", three_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - 6- four_num:%d\n", four_num);
+            if(pair_num>=1 || three_num>=1)
             {
-                call=0; 
-                check=1;
-                fold=0;
+               call=0; 
+               check=1;
+               fold=0;               
             }
-            re_num=0;
+            if(four_num==1)
+            {
+               all_in=1;
+               call=0; 
+               check=0;
+               fold=0;               
+            }
+            pair_num=0;
+            three_num=0;
+            four_num=0;
             if(check!=1 && all_in!=1)
             {
                 fold=1;
@@ -523,39 +543,43 @@ int on_server_message(int length, const char* buffer)
 
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]>=2)
+                if(REPEAT[i]==2)
                 {
-                   re_num++;                 
+                   pair_num++;                 
                 }
                 if(REPEAT[i]==3)
                 {
-                   call=0; 
-                   check=1;
-                   fold=0;   
-                   break;               
+                   three_num++;                
                 }
                 if(REPEAT[i]>3)
                 {
-                   all_in=1;
-                   call=0; 
-                   check=0;
-                   fold=0;  
-                   break;                
+                   four_num++;               
                 }
             }
             for(i=0;i<13;i++)
             {
                 REPEAT[i]=0;
             }
-            printf("- - - - - - - - - - - - - - - 7re_num:%d\n", re_num);
-            fprintf(DataFServer,"- - - - - - - - - - - - - - - 7re_num:%d\n", re_num);
-            if(re_num>=2)
+            //printf("- - - - - - - - - - - - - - - 7re_num:%d\n", re_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 7pair_num:%d\n", pair_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 7three_num:%d\n", three_num);
+            fprintf(DataFServer,"- - - - - - - - - - - - - - - 7four_num:%d\n", four_num);
+            if(pair_num>=1 || three_num>=1)
             {
-                call=0; 
-                check=1;
-                fold=0;
+               call=0; 
+               check=1;
+               fold=0;               
             }
-            re_num=0;
+            if(four_num==1)
+            {
+               all_in=1;
+               call=0; 
+               check=0;
+               fold=0;                  
+            }
+            pair_num=0;
+            three_num=0;
+            four_num=0;
             if(check!=1 && all_in!=1)
             {
                 fold=1;
