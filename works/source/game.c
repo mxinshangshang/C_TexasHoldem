@@ -197,7 +197,7 @@ int on_server_message(int length, const char* buffer)
                         fold=0; 
                         break; 
                       }
-                      else if(i>7 && i<10)//9 10 up
+                      else if(i>7 && i<10)//9 10 up Flush
                       {
                         for(j=0;j<4;j++)
                         {
@@ -208,7 +208,15 @@ int on_server_message(int length, const char* buffer)
                              fold=0; 
                              break;        
                             }
+                           else if(REPEAT_C[j]==1)
+                           {
+                             call=0; 
+                             check=0;
+                             fold=1; 
+                             break;        
+                            }
                          }
+                         break;
                       }
                       else
                       {
@@ -317,7 +325,7 @@ int on_server_message(int length, const char* buffer)
                               
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]==2)
+                if(REPEAT[i]==2 && i>=9)
                 {
                    pair_num++;                 
                 }
@@ -430,7 +438,7 @@ int on_server_message(int length, const char* buffer)
 
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]==2)
+                if(REPEAT[i]==2 && i>=9)
                 {
                    pair_num++;                 
                 }
@@ -543,7 +551,7 @@ int on_server_message(int length, const char* buffer)
 
             for(i=0;i<13;i++)
             {
-                if(REPEAT[i]==2)
+                if(REPEAT[i]==2 && i>=9)
                 {
                    pair_num++;                 
                 }
@@ -731,3 +739,4 @@ int main(int argc, char *argv[])
    close(m_socket_id);
    return 0;
 }
+
